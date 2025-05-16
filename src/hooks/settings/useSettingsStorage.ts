@@ -14,14 +14,24 @@ export const useSettingsStorage = () => {
       let parsedSettings = storedSettings ? JSON.parse(storedSettings) : defaultSettings;
       
       // Vérifier si les images sont stockées séparément et les récupérer
-      const storedLogo = localStorage.getItem('site_logo');
-      if (storedLogo) {
-        parsedSettings.logo = storedLogo;
-        console.log("Logo chargé depuis le stockage séparé");
+      if (parsedSettings.logo === 'stored_separately') {
+        try {
+          const storedLogo = localStorage.getItem('site_logo');
+          if (storedLogo) {
+            console.log("Logo chargé depuis le stockage séparé, longueur:", storedLogo.length);
+            parsedSettings.logo = storedLogo;
+          } else {
+            console.log("Aucun logo trouvé dans le stockage séparé");
+            parsedSettings.logo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+          }
+        } catch (logoError) {
+          console.error("Erreur lors du chargement du logo séparé:", logoError);
+          parsedSettings.logo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+        }
       }
       
       const storedFavicon = localStorage.getItem('site_favicon');
-      if (storedFavicon) {
+      if (parsedSettings.favicon === 'stored_separately' && storedFavicon) {
         parsedSettings.favicon = storedFavicon;
         console.log("Favicon chargé depuis le stockage séparé");
       }
@@ -30,7 +40,7 @@ export const useSettingsStorage = () => {
       parsedSettings.darkMode = false;
       
       setSettings(parsedSettings as SiteSettings);
-      console.log("Paramètres chargés avec succès", parsedSettings);
+      console.log("Paramètres chargés avec succès");
     } catch (error) {
       console.error("Erreur lors du chargement des paramètres:", error);
       setSettings({...defaultSettings, darkMode: false} as SiteSettings);
@@ -42,8 +52,12 @@ export const useSettingsStorage = () => {
     try {
       // Sauvegarder immédiatement le logo et favicon
       if (settings.logo && settings.logo.startsWith('data:')) {
-        localStorage.setItem('site_logo', settings.logo);
-        console.log("Logo sauvegardé séparément");
+        try {
+          localStorage.setItem('site_logo', settings.logo);
+          console.log("Logo sauvegardé séparément, longueur:", settings.logo.length);
+        } catch (logoError) {
+          console.error("Erreur lors de la sauvegarde du logo:", logoError);
+        }
       }
       
       if (settings.favicon && settings.favicon.startsWith('data:')) {

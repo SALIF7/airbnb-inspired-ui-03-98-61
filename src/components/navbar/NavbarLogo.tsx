@@ -14,13 +14,15 @@ export const NavbarLogo = () => {
   // Update currentLogo when settings.logo changes or on component mount
   useEffect(() => {
     try {
+      // Use a default logo if none is provided
+      const defaultLogo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
       let logoSrc = "";
       
       if (settings.logo === 'stored_separately') {
         const storedLogo = localStorage.getItem('site_logo');
-        logoSrc = storedLogo || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+        logoSrc = storedLogo || defaultLogo;
       } else {
-        logoSrc = settings.logo || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+        logoSrc = settings.logo || defaultLogo;
       }
       
       console.log("Logo source actualisé:", logoSrc.substring(0, 30) + "...");
@@ -30,10 +32,15 @@ export const NavbarLogo = () => {
     } catch (error) {
       console.error("Erreur lors de l'initialisation du logo:", error);
       setLogoError(true);
-      // Use default logo in case of error - updated to the new logo
+      // Use default logo in case of error
       setCurrentLogo("/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png");
     }
   }, [settings.logo]);
+  
+  const handleLogoError = () => {
+    console.error("Error loading logo in navbar:", currentLogo?.substring(0, 30));
+    setLogoError(true);
+  };
   
   return (
     <Link to="/" className="flex items-center gap-4 sm:gap-6 md:gap-8 mr-8">
@@ -44,16 +51,13 @@ export const NavbarLogo = () => {
         style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
       >
         <div className="h-10 sm:h-12 md:h-14 w-10 sm:w-12 md:w-14 flex items-center justify-center overflow-hidden rounded-full bg-black border-2 border-yellow-500">
-          {!logoError ? (
+          {!logoError && currentLogo ? (
             <img 
               src={currentLogo} 
               alt={settings.siteName || "Logo"}
               className={`logo w-full h-full transition-all duration-300 ease-in-out ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setLogoLoaded(true)}
-              onError={() => {
-                console.error("Error loading logo:", currentLogo.substring(0, 30) + "...");
-                setLogoError(true);
-              }}
+              onError={handleLogoError}
             />
           ) : null}
           

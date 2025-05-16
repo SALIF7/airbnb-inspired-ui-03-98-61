@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import { ImageIcon, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -31,6 +31,9 @@ export const LogoSection = ({
       setLogoError(false);
       setLogoLoaded(false);
       
+      // Use a default logo if none is provided
+      const defaultLogo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+      
       // Check if the logo is stored separately
       if (settings.logo === 'stored_separately') {
         const storedLogo = localStorage.getItem('site_logo');
@@ -38,12 +41,12 @@ export const LogoSection = ({
           console.log("Logo loaded from separate storage");
           setPreviewUrl(storedLogo);
         } else {
-          console.log("No logo found in separate storage");
-          setPreviewUrl(logoUrl || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png");
+          console.log("No logo found in separate storage, using default");
+          setPreviewUrl(defaultLogo);
         }
       } else {
-        console.log("Using logo from settings");
-        setPreviewUrl(settings.logo || logoUrl || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png");
+        console.log("Using logo from settings:", settings.logo?.substring(0, 30));
+        setPreviewUrl(settings.logo || logoUrl || defaultLogo);
       }
     } catch (error) {
       console.error("Error loading logo:", error);
@@ -55,7 +58,6 @@ export const LogoSection = ({
   const handleLogoError = () => {
     console.error("Error loading logo preview");
     setLogoError(true);
-    toast.error("Unable to display logo. Please try uploading again.");
   };
   
   const handleRetryLoad = () => {
@@ -65,11 +67,13 @@ export const LogoSection = ({
     // Force reload by setting a temporary empty value
     setPreviewUrl("");
     setTimeout(() => {
+      const defaultLogo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+      
       if (settings.logo === 'stored_separately') {
         const storedLogo = localStorage.getItem('site_logo');
-        setPreviewUrl(storedLogo || logoUrl || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png");
+        setPreviewUrl(storedLogo || logoUrl || defaultLogo);
       } else {
-        setPreviewUrl(settings.logo || logoUrl || "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png");
+        setPreviewUrl(settings.logo || logoUrl || defaultLogo);
       }
     }, 100);
   };
@@ -96,12 +100,13 @@ export const LogoSection = ({
                 <img 
                   src={previewUrl} 
                   alt="Logo du site" 
-                  className={`w-full h-full object-cover logo ${logoLoaded ? '' : 'opacity-0'}`}
+                  className={`w-full h-full object-cover logo ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onError={handleLogoError}
                   onLoad={() => setLogoLoaded(true)}
                 />
               ) : (
                 <div className="flex flex-col items-center gap-2 logo-fallback rounded-full h-full w-full bg-black border-2 border-yellow-500 flex items-center justify-center">
+                  <ImageIcon className="h-8 w-8 text-yellow-500" />
                   <span className="text-yellow-500 font-bold text-xl">
                     {settings.siteName ? settings.siteName.substring(0, 2).toUpperCase() : 'SJ'}
                   </span>
@@ -124,6 +129,7 @@ export const LogoSection = ({
                 className="ml-auto" 
                 onClick={handleRetryLoad}
               >
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Réessayer
               </Button>
             </Alert>
