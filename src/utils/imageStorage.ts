@@ -8,14 +8,36 @@
  */
 export const purgeOldImageEntries = (): void => {
   try {
+    // Garder une liste des clés à supprimer pour éviter les problèmes de boucle
+    const keysToRemove: string[] = [];
+    
+    // Identifier les clés à supprimer
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && (key.includes('job_featured_image_') || key.includes('job_images_'))) {
         // Ne supprimer que les anciennes entrées (pas les "latest")
         if (!key.includes('_latest')) {
-          localStorage.removeItem(key);
+          keysToRemove.push(key);
         }
       }
+      
+      // Gérer également les anciennes versions du logo (garder seulement la plus récente)
+      if (key && key.startsWith('site_logo_') && key !== 'site_logo' && key !== 'site_logo_timestamp') {
+        const currentTimestamp = localStorage.getItem('site_logo_timestamp');
+        // Si ce n'est pas la version actuelle, ajouter à la liste de suppression
+        if (currentTimestamp && key !== `site_logo_${currentTimestamp}`) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+    
+    // Supprimer toutes les clés identifiées
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    if (keysToRemove.length > 0) {
+      console.log(`${keysToRemove.length} anciennes entrées nettoyées du localStorage`);
     }
   } catch (error) {
     console.error('Erreur lors du nettoyage du localStorage:', error);
@@ -46,7 +68,10 @@ export const storeImagesToLocalStorage = async (
     const processedImages = await Promise.all(
       limitedImages.map(async (img) => {
         try {
-          return await compressFunction(img, 0.6);
+          // Ajouter un timestamp unique à chaque image pour éviter les problèmes de cache
+          const timestamp = new Date().getTime();
+          const compressedImg = await compressFunction(img, 0.6);
+          return `${compressedImg}#t=${timestamp}`;
         } catch (error) {
           console.error("Erreur lors du traitement de l'image:", error);
           return '';
@@ -70,7 +95,7 @@ export const storeImagesToLocalStorage = async (
 };
 
 /**
- * Stocke une image unique dans localStorage
+ * Stocke une image unique dans localStorage avec versionnement
  */
 export const storeSingleImageToLocalStorage = async (
   key: string, 
@@ -89,6 +114,14 @@ export const storeSingleImageToLocalStorage = async (
     // Compresser l'image
     const compressedImage = await compressFunction(image, 0.7);
     
+    // Pour des images importantes comme le logo, utiliser le versionnement
+    if (key.includes('logo') || key.includes('favicon')) {
+      const timestamp = new Date().getTime();
+      localStorage.setItem(`${storageKey}_${timestamp}`, compressedImage);
+      localStorage.setItem(`${key}_timestamp`, timestamp.toString());
+    }
+    
+    // Toujours stocker la version standard
     localStorage.setItem(storageKey, compressedImage);
     console.log(`Image convertie et stockée dans ${storageKey}`);
     
@@ -123,12 +156,24 @@ export const getImagesFromLocalStorage = (key: string, jobId?: string): string[]
 };
 
 /**
- * Récupère une image unique depuis localStorage
+ * Récupère une image unique depuis localStorage avec gestion des versions
  */
 export const getSingleImageFromLocalStorage = (key: string, jobId?: string): string => {
   try {
     const storageKey = jobId ? `${key}_${jobId}` : `${key}_latest`;
-    const image = localStorage.getItem(storageKey);
+    
+    // Vérifier d'abord s'il existe une version avec timestamp
+    const timestamp = localStorage.getItem(`${key}_timestamp`);
+    let image;
+    
+    if (timestamp) {
+      image = localStorage.getItem(`${storageKey}_${timestamp}`);
+    }
+    
+    // Si pas trouvé avec timestamp, utiliser la version standard
+    if (!image) {
+      image = localStorage.getItem(storageKey);
+    }
     
     if (!image) return '';
     

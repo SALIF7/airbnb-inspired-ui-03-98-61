@@ -19,7 +19,14 @@ export const useSettingsStorage = () => {
           const storedLogo = localStorage.getItem('site_logo');
           if (storedLogo) {
             console.log("Logo chargé depuis le stockage séparé, longueur:", storedLogo.length);
-            parsedSettings.logo = storedLogo;
+            
+            // Pour une meilleure persistance, vérifier que le logo est une URL de données valide
+            if (storedLogo.startsWith('data:image/')) {
+              parsedSettings.logo = storedLogo;
+            } else {
+              console.log("Format de logo invalide, utilisation du logo par défaut");
+              parsedSettings.logo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
+            }
           } else {
             console.log("Aucun logo trouvé dans le stockage séparé");
             parsedSettings.logo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
@@ -30,6 +37,7 @@ export const useSettingsStorage = () => {
         }
       }
       
+      // Vérifier également pour le favicon
       const storedFavicon = localStorage.getItem('site_favicon');
       if (parsedSettings.favicon === 'stored_separately' && storedFavicon) {
         parsedSettings.favicon = storedFavicon;
@@ -47,16 +55,31 @@ export const useSettingsStorage = () => {
     }
   }, []);
 
-  // Sauvegarder les paramètres à chaque modification
+  // Sauvegarder les paramètres à chaque modification de manière plus robuste
   useEffect(() => {
     try {
-      // Sauvegarder immédiatement le logo et favicon
-      if (settings.logo && settings.logo.startsWith('data:')) {
-        try {
-          localStorage.setItem('site_logo', settings.logo);
-          console.log("Logo sauvegardé séparément, longueur:", settings.logo.length);
-        } catch (logoError) {
-          console.error("Erreur lors de la sauvegarde du logo:", logoError);
+      // Vérifier et sauvegarder le logo et favicon
+      if (settings.logo) {
+        // Vérifier si c'est une URL de données
+        if (settings.logo.startsWith('data:')) {
+          try {
+            // Sauvegarder avec un timestamp pour éviter les problèmes de cache
+            const timestamp = new Date().getTime();
+            localStorage.setItem(`site_logo_${timestamp}`, settings.logo);
+            localStorage.setItem('site_logo', settings.logo);
+            localStorage.setItem('site_logo_timestamp', timestamp.toString());
+            console.log("Logo sauvegardé séparément avec horodatage:", timestamp);
+          } catch (logoError) {
+            console.error("Erreur lors de la sauvegarde du logo:", logoError);
+            // Essayer une version compressée si possible
+            try {
+              const compressedLogo = settings.logo.substring(0, 1000000); // Limiter la taille
+              localStorage.setItem('site_logo', compressedLogo);
+              console.log("Logo sauvegardé en version compressée");
+            } catch (compressError) {
+              console.error("Impossible de sauvegarder même le logo compressé:", compressError);
+            }
+          }
         }
       }
       
@@ -102,6 +125,14 @@ export const useSettingsStorage = () => {
   const resetSettings = () => {
     // Supprimer également les images stockées séparément
     localStorage.removeItem('site_logo');
+    localStorage.removeItem('site_logo_timestamp');
+    // Supprimer toutes les versions horodatées
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('site_logo_')) {
+        localStorage.removeItem(key);
+      }
+    }
     localStorage.removeItem('site_favicon');
     
     setSettings({...defaultSettings, darkMode: false} as SiteSettings);

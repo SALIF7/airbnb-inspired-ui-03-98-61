@@ -36,22 +36,37 @@ export const LogoSection = ({
       
       // Check if the logo is stored separately
       if (settings.logo === 'stored_separately') {
-        const storedLogo = localStorage.getItem('site_logo');
+        // Récupérer la version la plus récente du logo
+        const timestamp = localStorage.getItem('site_logo_timestamp');
+        let storedLogo;
+        
+        if (timestamp) {
+          storedLogo = localStorage.getItem(`site_logo_${timestamp}`);
+        }
+        
+        // Si pas trouvé avec timestamp, essayer la version standard
+        if (!storedLogo) {
+          storedLogo = localStorage.getItem('site_logo');
+        }
+        
         if (storedLogo) {
-          console.log("Logo loaded from separate storage");
+          console.log("Logo chargé depuis le stockage local (LogoSection)");
           setPreviewUrl(storedLogo);
         } else {
-          console.log("No logo found in separate storage, using default");
+          console.log("Aucun logo trouvé dans le stockage local, utilisation du logo par défaut");
           setPreviewUrl(defaultLogo);
         }
+      } else if (settings.logo) {
+        console.log("Utilisation du logo depuis les paramètres");
+        setPreviewUrl(settings.logo);
       } else {
-        console.log("Using logo from settings:", settings.logo?.substring(0, 30));
-        setPreviewUrl(settings.logo || logoUrl || defaultLogo);
+        console.log("Aucun logo trouvé, utilisation du logoUrl ou du logo par défaut");
+        setPreviewUrl(logoUrl || defaultLogo);
       }
     } catch (error) {
       console.error("Error loading logo:", error);
       setLogoError(true);
-      toast.error("Error loading logo");
+      toast.error("Erreur lors du chargement du logo");
     }
   }, [settings.logo, logoUrl]);
   
@@ -70,7 +85,18 @@ export const LogoSection = ({
       const defaultLogo = "/lovable-uploads/840dfb44-1c4f-4475-9321-7f361be73327.png";
       
       if (settings.logo === 'stored_separately') {
-        const storedLogo = localStorage.getItem('site_logo');
+        // Essayer de récupérer la version la plus récente
+        const timestamp = localStorage.getItem('site_logo_timestamp');
+        let storedLogo;
+        
+        if (timestamp) {
+          storedLogo = localStorage.getItem(`site_logo_${timestamp}`);
+        }
+        
+        if (!storedLogo) {
+          storedLogo = localStorage.getItem('site_logo');
+        }
+        
         setPreviewUrl(storedLogo || logoUrl || defaultLogo);
       } else {
         setPreviewUrl(settings.logo || logoUrl || defaultLogo);
