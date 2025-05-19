@@ -5,7 +5,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Reservation } from '@/hooks/reservations';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface CalendarViewProps {
   reservations: Reservation[];
@@ -27,7 +28,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ reservations }) => {
     return reservationsWithDates.some(res => {
       const checkIn = res.checkInDate;
       const checkOut = res.checkOutDate;
-      return date >= checkIn && date <= checkOut;
+      return isWithinInterval(date, { start: checkIn, end: checkOut });
     });
   };
   
@@ -36,7 +37,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ reservations }) => {
     const reservationsOnDate = reservationsWithDates.filter(res => {
       const checkIn = res.checkInDate;
       const checkOut = res.checkOutDate;
-      return date >= checkIn && date <= checkOut;
+      return isWithinInterval(date, { start: checkIn, end: checkOut });
     });
     
     setReservationsOnDate(reservationsOnDate);
@@ -103,7 +104,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ reservations }) => {
                 <div className="flex items-center space-x-2 mb-4">
                   <CalendarIcon className="h-5 w-5 text-gray-500" />
                   <h3 className="font-medium">
-                    Réservations du {format(selectedDate, 'dd/MM/yyyy')}
+                    Réservations du {format(selectedDate, 'dd/MM/yyyy', { locale: fr })}
                   </h3>
                 </div>
                 
@@ -115,7 +116,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ reservations }) => {
                         <div className="text-sm text-gray-500">{res.listingLocation}</div>
                         <div className="flex justify-between items-center mt-2">
                           <div className="text-xs">
-                            {format(new Date(res.checkIn), 'dd/MM')} - {format(new Date(res.checkOut), 'dd/MM/yyyy')}
+                            {format(new Date(res.checkIn), 'dd/MM', { locale: fr })} - {format(new Date(res.checkOut), 'dd/MM/yyyy', { locale: fr })}
                           </div>
                           <Badge className={getStatusColor(res.status)}>
                             {res.status === 'confirmed' ? 'Confirmée' : 

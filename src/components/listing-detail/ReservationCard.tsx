@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import DateRangePicker from "@/components/shared/DateRangePicker";
 import { useLanguage } from "@/hooks/language";
+import { differenceInDays, parseISO } from "date-fns";
 
 interface ReservationCardProps {
   price: string;
@@ -48,10 +49,9 @@ const ReservationCard = ({
   // Calculer la durée du séjour en jours
   const calculateDays = () => {
     if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    return differenceInDays(end, start);
   };
 
   const days = calculateDays();

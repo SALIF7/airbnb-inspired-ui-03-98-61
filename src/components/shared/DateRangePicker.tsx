@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Separator } from "@/components/ui/separator";
+import { format, isValid, parseISO } from "date-fns";
 
 interface DateRangePickerProps {
   startDate: string;
@@ -19,6 +20,18 @@ const DateRangePicker = ({
 }: DateRangePickerProps) => {
   // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date().toISOString().split("T")[0];
+
+  // Format dates for display in French format if valid
+  const formatDateIfValid = (dateString: string): string => {
+    if (!dateString) return "";
+    
+    try {
+      const date = parseISO(dateString);
+      return isValid(date) ? format(date, "dd/MM/yyyy") : "";
+    } catch (e) {
+      return "";
+    }
+  };
 
   return (
     <div className={`border rounded-lg overflow-hidden ${className}`}>
